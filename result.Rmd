@@ -1,0 +1,53 @@
+
+title: 'P&S-2025: Lab assignment 3'
+authors: "Oleksii Lasiichuk, Kyrylo Omelianchuk, Sophie Sychak"
+output:
+  html_document:
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
+
+
+Work Breakdown Structure: 
+- Task 1: ---
+- Task 2: ---
+- Task 3: ---
+
+```{r}
+# our team id number 
+id <- 32
+set.seed(id)
+
+```
+
+
+Part I: Parameter estimation
+
+Problem 1
+
+```{r}
+
+```
+
+Problem 2
+
+```{r}
+
+```
+
+
+
+
+Part II: Unbiasedness of Estimators
+
+Problem 3
+
+```{r}
+
+```
+
+
+
+
+Conclusion (if we will have one)
