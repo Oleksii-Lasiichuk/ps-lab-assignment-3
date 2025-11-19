@@ -10,9 +10,9 @@ editor_options:
 
 
 Work Breakdown Structure: 
-- Task 1: ---
-- Task 2: ---
-- Task 3: ---
+- Task 1: --- Kyrylo
+- Task 2: --- Oleksii
+- Task 3: --- Sophie
 
 ```{r}
 # our team id number 
@@ -26,9 +26,311 @@ Part I: Parameter estimation
 
 Problem 1
 
-```{r}
+The primary objective of this problem is to verify the reliability of point estimates and confidence intervals for the parameter $\theta = 1/\lambda$ of an exponential distribution. We will have to verify that the interval estimates produced by the known rules indeed contain the parameter with probability equal to the confidence level.
 
+### Constants
+
+```{r}
+theta <- id/10
+M <- 10000
+n <- 100
+alphas <- c(0.1, 0.05, 0.01)
+alpha <- 0.1
 ```
+
+
+### Basic statistics
+
+```{r}
+# theta = 1 / lambda, so => lambda = 1 / theta
+lambda <- 1 / theta
+
+X <- matrix(rexp(n * M, rate = lambda), nrow = M)
+
+# Calculate Statistics for each row
+sample_means <- rowMeans(X) # Sample Mean
+sample_sds <- apply(X, 1, sd) # Sample Standard Deviation
+```
+
+## Finding the confidence intervals
+
+## Method 1
+
+**Goal:** Verify confidence intervals (CI) for the parameter $\theta = 1/\lambda$ of an exponential distribution using the exact distribution of the statistic $2\lambda n \overline{X}$.
+
+We are given $X_1, \dots, X_n \sim \mathcal{E}(\lambda)$. We know that the sum of independent exponential random variables follows a Gamma distribution: $$\sum_{i=1}^n X_i \sim \text{Gamma}(n, \lambda)$$ Since $\overline{X} = \frac{1}{n}\sum X_i$, then $n\overline{X} \sim \text{Gamma}(n, \lambda)$.
+
+We use the scaling property of the Gamma distribution: if $Y \sim \text{Gamma}(n, \lambda)$, then $cY \sim \text{Gamma}(n, \lambda/c)$. However, a more direct relationship to the Chi-squared distribution is standard in probability theory:
+
+1\. $2\lambda X_i \sim \mathcal{E}(1/2)$, which is equivalent to $\chi^2_2$ (Chi-squared with 2 degrees of freedom).
+
+2\. The sum of independent $\chi^2$ variables is also $\chi^2$, with degrees of freedom summing up.
+
+3\. Therefore, $\sum_{i=1}^n 2\lambda X_i = 2\lambda \sum X_i = 2\lambda n \overline{X} \sim \chi^2_{2n}$.
+
+```{r}
+statistic <- 2 * lambda * n * sample_means
+
+hist(statistic, breaks = 50, freq = FALSE, 
+     main = paste("Distribution of 2*lambda*n*X_bar (n =", n, ")"),
+     xlab = "Value", col = "lightblue", border = "white")
+
+curve(dchisq(x, df = 2 * n), from = min(statistic), to = max(statistic), 
+      add = TRUE, col = "red", lwd = 2)
+legend("topright", legend = c("Simulated", "Theoretical Chi-Sq"), 
+       col = c("lightblue", "red"), lwd = c(10, 2))
+```
+
+#### Derivation of the Confidence Interval
+
+To construct a CI with level $1-\alpha$, we use the pivot $W = 2\lambda n \overline{X}$: $$P(\chi^2_{2n, \alpha/2} \le 2\lambda n \overline{X} \le \chi^2_{2n, 1-\alpha/2}) = 1 - \alpha$$ Substituting $\lambda = 1/\theta$: $$\chi^2_{2n, \alpha/2} \le \frac{2n\overline{X}}{\theta} \le \chi^2_{2n, 1-\alpha/2}$$ Inverting for $\theta$ : $$\frac{2n\overline{X}}{\chi^2_{2n, 1-\alpha/2}} \le \theta \le \frac{2n\overline{X}}{\chi^2_{2n, \alpha/2}}$$
+
+```{r}
+# Critical values (Quantiles)
+# Lower tail (alpha/2) and Upper tail (1 - alpha/2)
+chi_lower_q <- qchisq(alpha / 2, df = 2 * n)
+chi_upper_q <- qchisq(1 - alpha / 2, df = 2 * n)
+
+# Calculate Bounds for each simulation
+# Lower Bound of CI
+ci_lower <- (2 * n * sample_means) / chi_upper_q
+# Upper Bound of CI
+ci_upper <- (2 * n * sample_means) / chi_lower_q
+
+# Check Coverage: Does the interval contain true theta?
+is_covered <- (theta >= ci_lower) & (theta <= ci_upper)
+
+# Statistics
+coverage_prob <- mean(is_covered)
+avg_length <- mean(ci_upper - ci_lower)
+
+# Output Results
+cat("Method 1 (Exact Chi-Square) Results:\n")
+cat("Target Confidence Level:", 1 - alpha, "\n")
+cat("Observed Coverage Probability:", coverage_prob, "\n")
+cat("Average Interval Length:", avg_length, "\n")
+```
+
+## Method 2
+
+**Goal:** Construct a confidence interval using the Central Limit Theorem (CLT), assuming the population variance is known.
+
+According to the Central Limit Theorem, for a large sample size $n$, the sample mean $\overline{X}$ of i.i.d. random variables with mean $\mu$ and variance $\sigma^2$ follows an approximate normal distribution: $$\overline{X} \sim \mathcal{N}\left(\mu, \frac{\sigma^2}{n}\right)$$
+
+For the Exponential distribution $\mathcal{E}(\lambda)$ where parameter $\theta = 1/\lambda$: \* Mean $\mu = \theta$ \* Variance $\sigma^2 = \theta^2$
+
+Thus, the standardized Z-statistic is: $$Z = \frac{\overline{X} - \theta}{\sigma/\sqrt{n}} = \frac{\overline{X} - \theta}{\theta/\sqrt{n}} \approx \mathcal{N}(0, 1)$$
+
+```{r}
+# Calculate the Z-statistic using the TRUE standard deviation (theta)
+# Z = (X_bar - mu) / (sigma / sqrt(n))
+z_statistic <- (sample_means - theta) / (theta / sqrt(n))
+
+# Plot histogram vs Standard Normal PDF
+hist(z_statistic, breaks = 60, freq = FALSE, 
+     main = paste("Distribution of Z-statistic (n =", n, ")"),
+     xlab = "Z value", col = "lightgreen", border = "white")
+
+# Overlay Standard Normal density (Mean=0, SD=1)
+curve(dnorm(x, mean = 0, sd = 1), 
+      from = min(z_statistic), to = max(z_statistic), 
+      add = TRUE, col = "darkblue", lwd = 2)
+
+legend("topright", legend = c("Simulated Z", "Standard Normal"), 
+       col = c("lightgreen", "darkblue"), lwd = c(10, 2))
+```
+
+#### Derivation of the Confidence Interval
+
+We seek an interval such that $P(|\theta - \overline{X}| \le \text{margin}) = 1 - \alpha$. Using the Z-statistic: $$P\left( -z_{1-\alpha/2} \le \frac{\overline{X} - \theta}{\theta/\sqrt{n}} \le z_{1-\alpha/2} \right) \approx 1 - \alpha$$
+
+Rearranging this inequality to isolate $\theta$ *in the center* relative to $\overline{X}$ gives the interval: $$\overline{X} - z_{1-\alpha/2}\frac{\theta}{\sqrt{n}} \le \theta \le \overline{X} + z_{1-\alpha/2}\frac{\theta}{\sqrt{n}}$$
+
+```{r}
+# Calculate the critical Z value (quantile)
+z_crit <- qnorm(1 - alpha / 2)
+
+# Calculate the "Known Variance" Margin of Error
+# We use the true theta here
+margin_error <- z_crit * (theta / sqrt(n))
+
+# Construct Intervals
+ci_lower <- sample_means - margin_error
+ci_upper <- sample_means + margin_error
+
+# Check Coverage
+is_covered <- (theta >= ci_lower) & (theta <= ci_upper)
+
+# Statistics
+coverage_prob <- mean(is_covered)
+avg_length <- mean(ci_upper - ci_lower)
+
+# Output Results
+cat("Method 2 (Normal Approx with Known Variance) Results:\n")
+cat("Target Confidence Level:", 1 - alpha, "\n")
+cat("Observed Coverage Probability:", coverage_prob, "\n")
+cat("Average Interval Length:", avg_length, "\n")
+```
+
+## Method 3
+
+**Goal:** Construct a confidence interval by solving the double inequality $|\theta - \overline{X}| [cite_start]\le z_{\beta}\theta/\sqrt{n}$ for the unknown parameter $\theta$.
+
+```{r}
+# Method 3 still relies on the Z-statistic being Standard Normal
+# to justify the choice of z_beta.
+z_statistic <- (sample_means - theta) / (theta / sqrt(n))
+
+hist(z_statistic, breaks = 60, freq = FALSE, 
+     main = paste("Underlying Z-Statistic (n =", n, ")"),
+     xlab = "Z value", col = "plum", border = "white")
+
+curve(dnorm(x, mean = 0, sd = 1), 
+      from = min(z_statistic), to = max(z_statistic), 
+      add = TRUE, col = "darkblue", lwd = 2)
+
+legend("topright", legend = c("Simulated Z", "Standard Normal"), 
+       col = c("plum", "darkblue"), lwd = c(10, 2))
+```
+
+#### Derivation of the Confidence Interval
+
+In Method 2, we used the inequality $|\overline{X} - \theta| \le z \frac{\theta}{\sqrt{n}}$. However, using $\theta$ in the margin of error is impractical because $\theta$ is unknown. Method 3 fixes this by algebraically isolating $\theta$.
+
+Let $k = \frac{z_{\beta}}{\sqrt{n}}$. The inequality is: $$|\overline{X} - \theta| \le k\theta$$
+
+We can rewrite this as: $$-k\theta \le \overline{X} - \theta \le k\theta$$
+
+Add $\theta$ to all sides: $$\theta - k\theta \le \overline{X} \le \theta + k\theta$$ $$\theta(1 - k) \le \overline{X} \le \theta(1 + k)$$
+
+This gives us two separate inequalities to solve for $\theta$:
+
+1.  **Upper Bound:** From $\overline{X} \le \theta(1 + k)$, we get: $$\theta \ge \frac{\overline{X}}{1 + k}$$
+
+2.  **Lower Bound:** From $\theta(1 - k) \le \overline{X}$, assuming $k < 1$ (which is true for large $n$): $$\theta \le \frac{\overline{X}}{1 - k}$$
+
+Thus, the confidence interval is: $$\left[ \frac{\overline{X}}{1 + \frac{z_{\beta}}{\sqrt{n}}}, \quad \frac{\overline{X}}{1 - \frac{z_{\beta}}{\sqrt{n}}} \right]$$
+
+```{r}
+# Critical Z value
+z_crit <- qnorm(1 - alpha / 2)
+k <- z_crit / sqrt(n)
+
+# Construct Intervals using the derived formula
+# Lower Limit: X_bar / (1 + k)
+ci_lower <- sample_means / (1 + k)
+
+# Upper Limit: X_bar / (1 - k)
+ci_upper <- sample_means / (1 - k)
+
+# Check Coverage
+is_covered <- (theta >= ci_lower) & (theta <= ci_upper)
+
+# Statistics
+coverage_prob <- mean(is_covered)
+avg_length <- mean(ci_upper - ci_lower)
+
+# Output Results
+cat("Method 3 (Solved Inequality) Results:\n")
+cat("Target Confidence Level:", 1 - alpha, "\n")
+cat("Observed Coverage Probability:", coverage_prob, "\n")
+cat("Average Interval Length:", avg_length, "\n")
+```
+
+## Method 4
+
+**Goal:** Construct a confidence interval using the sample standard deviation ($S$) to estimate the unknown population standard deviation ($\sigma$).
+
+In Method 2, we assumed we knew the population variance ($\sigma^2 = \theta^2$). In practice, we rarely know the true variance. Instead, we estimate $\sigma$ using the **sample standard deviation** $S$: $$S = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (X_i - \overline{X})^2}$$
+
+When we replace the true $\sigma$ with the estimated $S$ in the standardization formula, the resulting statistic follows a **Student's t-distribution** with $n-1$ degrees of freedom (assuming the underlying data is normal, or appealing to the CLT for large samples): $$T = \frac{\overline{X} - \theta}{S/\sqrt{n}} \sim t_{n-1}$$
+
+```{r}
+# Calculate T-statistic using the SAMPLE standard deviation
+# T = (X_bar - theta) / (S / sqrt(n))
+t_statistic <- (sample_means - theta) / (sample_sds / sqrt(n))
+
+# Plot histogram vs Theoretical t-distribution
+hist(t_statistic, breaks = 60, freq = FALSE, 
+     main = paste("Distribution of T-statistic (n =", n, ")"),
+     xlab = "T value", col = "orange", border = "white")
+
+# Overlay Student's t density (df = n - 1)
+curve(dt(x, df = n - 1), 
+      from = min(t_statistic), to = max(t_statistic), 
+      add = TRUE, col = "black", lwd = 2)
+
+legend("topright", legend = c("Simulated T", "Theoretical t_n-1"), 
+       col = c("orange", "black"), lwd = c(10, 2))
+```
+
+#### Derivation of the Confidence Interval
+
+The confidence interval is constructed as: $$\overline{X} - t_{n-1, 1-\alpha/2} \frac{S}{\sqrt{n}} \le \theta \le \overline{X} + t_{n-1, 1-\alpha/2} \frac{S}{\sqrt{n}}$$
+
+This is the most "universal" approach because it does not require knowing $\theta$ or $\sigma$ beforehand to calculate the margin of error.
+
+```{r}
+# Critical t value (Quantile)
+t_crit <- qt(1 - alpha/2, df = n - 1)
+
+# Calculate Margin of Error using Sample SD
+margin_error <- t_crit * (sample_sds / sqrt(n))
+
+# Construct Intervals
+ci_lower <- sample_means - margin_error
+ci_upper <- sample_means + margin_error
+
+# Check Coverage
+is_covered <- (theta >= ci_lower) & (theta <= ci_upper)
+
+# Statistics
+coverage_prob <- mean(is_covered)
+avg_length <- mean(ci_upper - ci_lower)
+
+# Output Results
+cat("Method 4 (Student's t) Results:\n")
+cat("Target Confidence Level:", 1 - alpha, "\n")
+cat("Observed Coverage Probability:", coverage_prob, "\n")
+cat("Average Interval Length:", avg_length, "\n")
+```
+
+## Conclusions
+
+For this specific problem (Exponential Distribution), **Method 1 (Exact Chi-Squared)** is the best method.
+
+It is based on the exact distribution of the data, not an approximation. It works correctly even for small sample sizes ($n < 30$) where the Central Limit Theorem might not fully apply yet. Also, the Exponential distribution is skewed. The Chi-squared interval is naturally asymmetric, which better fits the data structure compared to the symmetric intervals produced by the Normal/Student approximations.
+
+\-
+
+\-
+
+\-
+
+\-
+
+\-
+
+## Tests summary
+
+-   **Method 1 (Exact Chi-Squared):** This method uses the exact distribution of the sum of exponential variables. It does not rely on approximations. The intervals are asymmetric, reflecting the skewness of the underlying exponential distribution.
+-   **Method 2 (Normal Approx, Known Variance):** This produced consistent intervals, but it is **impractical**. It relies on knowing the true parameter $\theta$ to calculate the standard error. In a real-world scenario, if we knew $\theta$ to calculate the interval width, we wouldn't need to estimate it.
+-   **Method 3 (Solved Inequality):** This provides a valid asymptotic interval without "cheating" (it doesn't use the true $\theta$). However, the algebra is more complex, and it still relies on the Central Limit Theorem (CLT).
+-   **Method 4 (Student's t):** This is the standard "universal" method. It uses the sample standard deviation ($S$) to estimate variability. It works well for large $n$ but assumes the sampling distribution of the mean is Normal (CLT).
+
+## Analysis of Simulation Parameters
+
+### Effect of Sample Size ($n$)
+
+-   **Precision:** As $n$ increases, the Confidence Interval becomes **narrower**. This is because the width of the interval is proportional to $1/\sqrt{n}$. More data leads to a more precise estimate.
+-   **Approximation Quality:** For Methods 2, 3, and 4, increasing $n$ improves the validity of the interval. Since these rely on the Central Limit Theorem, a larger $n$ makes the distribution of the sample mean closer to a Normal distribution, making the "Observed Coverage" closer to the theoretical confidence level.
+
+### Effect of Repetitions ($m$)
+
+-   **Stability:** Increasing $m$ does **not** change the interval length or the theoretical accuracy. Instead, it reduces simulation noise.
+-   **Reliability:** A larger $m$ (e.g., 10,000 vs 1,000) makes our "Observed Coverage Probability" result more reliable. If we ran the code with $m=10$, the result might be 80% or 100% just by luck. With $m=10,000$, the result stabilizes very close to $0.95$.
+
+
 
 Problem 2
 
