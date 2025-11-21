@@ -332,12 +332,141 @@ It is based on the exact distribution of the data, not an approximation. It work
 
 
 
-Problem 2
+## Problem 2
+Task:
+Repeat the analysis of confidence intervals for a Poisson distribution $\mathcal{P}(\theta)$.
+
+We need to verify that the confidence intervals constructed contain the parameter $\theta$ with the prescribed probability. We will analyze this using the three methods from Problem 1 (but excluding the Chi-Squared method which is only for Exponential)
+
+### Data Generation
+
+For the Poisson distribution $\mathcal{P}(\theta)$:
+Mean: $E[X] = \theta$
+Variance: $Var(X) = \theta$
+```{r}
+# parameters
+theta <- id / 10  # 3.2
+lambda <- theta
+n <- 100
+M <- 10000
+alpha <- 0.1
+
+X_pois <- matrix(rpois(n * M, lambda = lambda), nrow = M)
+
+pois_means <- rowMeans(X_pois)
+pois_sds <- apply(X_pois, 1, sd)
+```
+
+
+
+## Method 1: Normal Approximation (Known Variance)
+
+Goal: Construct CIs using the Normal approximation, assuming we know the true variance.
+
+By CLT, $\frac{\overline{X} - \theta}{\sqrt{\theta/n}} \approx \mathcal{N}(0,1)$
+
 
 ```{r}
+# Z-statistic
+z_stat_pois <- (pois_means - theta) / (sqrt(theta) / sqrt(n))
+
+# plotting
+hist(z_stat_pois, breaks = 50, freq = FALSE, main = "Z-statistic (Poisson)", col = "lightgreen")
+curve(dnorm(x), add = TRUE, col = "blue", lwd = 2)
+```
+
+Confidence Interval:
+
+
+$$\overline{X} \pm z_{1-\alpha/2} \sqrt{\frac{\theta}{n}}$$
+```{r}
+z_crit <- qnorm(1 - alpha/2)
+margin <- z_crit * sqrt(theta / n)
+
+ci_lower <- pois_means - margin
+ci_upper <- pois_means + margin
+
+cat("Method 1 (Poisson - Known Variance):\n")
+cat("Coverage:", mean(ci_lower <= theta & theta <= ci_upper), "\n")
+cat("Avg Length:", mean(ci_upper - ci_lower), "\n")
 
 ```
 
+
+## Method 2: Solving the Inequality (Score Interval)
+
+Goal: Construct CIs without using the true $\theta$ in the margin of error, by solving the inequality for $\theta$.
+
+We start with:
+$$ \left| \frac{\overline{X} - \theta}{\sqrt{\theta/n}} \right| \le z $$
+Squaring both sides:
+$$ \frac{(\overline{X} - \theta)^2}{\theta/n} \le z^2 \implies (\overline{X} - \theta)^2 \le \frac{z^2}{n} \theta $$
+Expanding the square:
+$$ \overline{X}^2 - 2\overline{X}\theta + \theta^2 \le \frac{z^2}{n} \theta $$
+Rearranging into a standard quadratic form $A\theta^2 + B\theta + C \le 0$:
+$$ \theta^2 - \left(2\overline{X} + \frac{z^2}{n}\right)\theta + \overline{X}^2 \le 0 $$
+
+The roots of this quadratic give the CI endpoints. Using the quadratic formula:
+$$ \theta_{1,2} = \frac{-B \pm \sqrt{B^2 - 4AC}}{2A} $$
+Where $A=1$, $B = -(2\overline{X} + z^2/n)$, $C = \overline{X}^2$.
+
+
+```{r}
+A <- 1
+B <- -(2 * pois_means + z_crit^2 / n)
+C <- pois_means^2
+
+discriminant <- sqrt(B^2 - 4 * A * C)
+
+# Roots
+root1 <- (-B - discriminant) / (2 * A)
+root2 <- (-B + discriminant) / (2 * A)
+
+ci_lower <- root1
+ci_upper <- root2
+
+cat("Method 2 (Poisson - Solved Quadratic):\n")
+cat("Coverage:", mean(ci_lower <= theta & theta <= ci_upper), "\n")
+cat("Avg Length:", mean(ci_upper - ci_lower), "\n")
+
+```
+
+## Method 3: Student's t-distribution
+
+Goal: Estimate the standard error using the sample standard deviation $S$.
+
+Since $Var(X) = \theta$, we could estimate variance with $\overline{X}$, but the standard "universal" approach uses the sample variance $S^2$:
+$$ \frac{\overline{X} - \theta}{S/\sqrt{n}} \sim t_{n-1} $$
+```{r}
+t_stat_pois <- (pois_means - theta) / (pois_sds / sqrt(n))
+
+# Plot
+hist(t_stat_pois, breaks = 50, freq = FALSE, main = "T-statistic (Poisson)", col = "orange")
+curve(dt(x, df=n-1), add = TRUE, col = "black", lwd = 2)
+```
+Confidence Interval:
+$$ \overline{X} \pm t_{n-1, 1-\alpha/2} \frac{S}{\sqrt{n}} $$
+```{r}
+t_crit <- qt(1 - alpha/2, df = n - 1)
+margin <- t_crit * (pois_sds / sqrt(n))
+
+ci_lower <- pois_means - margin
+ci_upper <- pois_means + margin
+
+cat("Method 3 (Poisson - Student's t):\n")
+cat("Coverage:", mean(ci_lower <= theta & theta <= ci_upper), "\n")
+cat("Avg Length:", mean(ci_upper - ci_lower), "\n")
+```
+
+## Conclusion for Problem 2
+
+Comparison: All three methods provide good coverage (close to the target $1-\alpha$).
+
+Method 1 is the narrowest but invalid in practice (requires knowing $\theta$).
+
+Method 2 (Solving the quadratic) is mathematically elegant and valid. It accounts for the fact that the variance changes with the mean. It produces slightly asymmetric intervals which is ok for Poisson (which is skewed for small $\theta$).
+
+Method 3 is the easiest to apply and works well for large $n$, but technically assumes normality of the data more strongly.
 
 
 
