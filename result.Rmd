@@ -1,18 +1,12 @@
+---
+---
+---
 
-title: 'P&S-2025: Lab assignment 3'
-authors: "Oleksii Lasiichuk, Kyrylo Omelianchuk, Sophie Sychak"
-output:
-  html_document:
-    df_print: paged
-editor_options: 
-  markdown: 
-    wrap: 72
+# **P&S-2025: Lab assignment 3**
 
+## **Oleksii Lasiichuk, Kyrylo Omelianchuk, Sofiia Sychak**
 
-Work Breakdown Structure: 
-- Task 1: --- Kyrylo
-- Task 2: --- Oleksii
-- Task 3: --- Sophie
+#### Work Breakdown Structure: - Task 1: --- Kyrylo - Task 2: --- Oleksii - Task 3: --- Sofiia
 
 ```{r}
 # our team id number 
@@ -20,7 +14,6 @@ id <- 32
 set.seed(id)
 
 ```
-
 
 Part I: Parameter estimation
 
@@ -37,7 +30,6 @@ n <- 100
 alphas <- c(0.1, 0.05, 0.01)
 alpha <- 0.1
 ```
-
 
 ### Basic statistics
 
@@ -330,19 +322,16 @@ It is based on the exact distribution of the data, not an approximation. It work
 -   **Stability:** Increasing $m$ does **not** change the interval length or the theoretical accuracy. Instead, it reduces simulation noise.
 -   **Reliability:** A larger $m$ (e.g., 10,000 vs 1,000) makes our "Observed Coverage Probability" result more reliable. If we ran the code with $m=10$, the result might be 80% or 100% just by luck. With $m=10,000$, the result stabilizes very close to $0.95$.
 
-
-
 ## Problem 2
-Task:
-Repeat the analysis of confidence intervals for a Poisson distribution $\mathcal{P}(\theta)$.
+
+Task: Repeat the analysis of confidence intervals for a Poisson distribution $\mathcal{P}(\theta)$.
 
 We need to verify that the confidence intervals constructed contain the parameter $\theta$ with the prescribed probability. We will analyze this using the three methods from Problem 1 (but excluding the Chi-Squared method which is only for Exponential)
 
 ### Data Generation
 
-For the Poisson distribution $\mathcal{P}(\theta)$:
-Mean: $E[X] = \theta$
-Variance: $Var(X) = \theta$
+For the Poisson distribution $\mathcal{P}(\theta)$: Mean: $E[X] = \theta$ Variance: $Var(X) = \theta$
+
 ```{r}
 # parameters
 theta <- id / 10  # 3.2
@@ -357,14 +346,11 @@ pois_means <- rowMeans(X_pois)
 pois_sds <- apply(X_pois, 1, sd)
 ```
 
-
-
 ## Method 1: Normal Approximation (Known Variance)
 
 Goal: Construct CIs using the Normal approximation, assuming we know the true variance.
 
 By CLT, $\frac{\overline{X} - \theta}{\sqrt{\theta/n}} \approx \mathcal{N}(0,1)$
-
 
 ```{r}
 # Z-statistic
@@ -377,8 +363,8 @@ curve(dnorm(x), add = TRUE, col = "blue", lwd = 2)
 
 Confidence Interval:
 
-
 $$\overline{X} \pm z_{1-\alpha/2} \sqrt{\frac{\theta}{n}}$$
+
 ```{r}
 z_crit <- qnorm(1 - alpha/2)
 margin <- z_crit * sqrt(theta / n)
@@ -392,24 +378,13 @@ cat("Avg Length:", mean(ci_upper - ci_lower), "\n")
 
 ```
 
-
 ## Method 2: Solving the Inequality (Score Interval)
 
 Goal: Construct CIs without using the true $\theta$ in the margin of error, by solving the inequality for $\theta$.
 
-We start with:
-$$ \left| \frac{\overline{X} - \theta}{\sqrt{\theta/n}} \right| \le z $$
-Squaring both sides:
-$$ \frac{(\overline{X} - \theta)^2}{\theta/n} \le z^2 \implies (\overline{X} - \theta)^2 \le \frac{z^2}{n} \theta $$
-Expanding the square:
-$$ \overline{X}^2 - 2\overline{X}\theta + \theta^2 \le \frac{z^2}{n} \theta $$
-Rearranging into a standard quadratic form $A\theta^2 + B\theta + C \le 0$:
-$$ \theta^2 - \left(2\overline{X} + \frac{z^2}{n}\right)\theta + \overline{X}^2 \le 0 $$
+We start with: $$ \left| \frac{\overline{X} - \theta}{\sqrt{\theta/n}} \right| \le z $$ Squaring both sides: $$ \frac{(\overline{X} - \theta)^2}{\theta/n} \le z^2 \implies (\overline{X} - \theta)^2 \le \frac{z^2}{n} \theta $$ Expanding the square: $$ \overline{X}^2 - 2\overline{X}\theta + \theta^2 \le \frac{z^2}{n} \theta $$ Rearranging into a standard quadratic form $A\theta^2 + B\theta + C \le 0$: $$ \theta^2 - \left(2\overline{X} + \frac{z^2}{n}\right)\theta + \overline{X}^2 \le 0 $$
 
-The roots of this quadratic give the CI endpoints. Using the quadratic formula:
-$$ \theta_{1,2} = \frac{-B \pm \sqrt{B^2 - 4AC}}{2A} $$
-Where $A=1$, $B = -(2\overline{X} + z^2/n)$, $C = \overline{X}^2$.
-
+The roots of this quadratic give the CI endpoints. Using the quadratic formula: $$ \theta_{1,2} = \frac{-B \pm \sqrt{B^2 - 4AC}}{2A} $$ Where $A=1$, $B = -(2\overline{X} + z^2/n)$, $C = \overline{X}^2$.
 
 ```{r}
 A <- 1
@@ -435,8 +410,8 @@ cat("Avg Length:", mean(ci_upper - ci_lower), "\n")
 
 Goal: Estimate the standard error using the sample standard deviation $S$.
 
-Since $Var(X) = \theta$, we could estimate variance with $\overline{X}$, but the standard "universal" approach uses the sample variance $S^2$:
-$$ \frac{\overline{X} - \theta}{S/\sqrt{n}} \sim t_{n-1} $$
+Since $Var(X) = \theta$, we could estimate variance with $\overline{X}$, but the standard "universal" approach uses the sample variance $S^2$: $$ \frac{\overline{X} - \theta}{S/\sqrt{n}} \sim t_{n-1} $$
+
 ```{r}
 t_stat_pois <- (pois_means - theta) / (pois_sds / sqrt(n))
 
@@ -444,8 +419,9 @@ t_stat_pois <- (pois_means - theta) / (pois_sds / sqrt(n))
 hist(t_stat_pois, breaks = 50, freq = FALSE, main = "T-statistic (Poisson)", col = "orange")
 curve(dt(x, df=n-1), add = TRUE, col = "black", lwd = 2)
 ```
-Confidence Interval:
-$$ \overline{X} \pm t_{n-1, 1-\alpha/2} \frac{S}{\sqrt{n}} $$
+
+Confidence Interval: $$ \overline{X} \pm t_{n-1, 1-\alpha/2} \frac{S}{\sqrt{n}} $$
+
 ```{r}
 t_crit <- qt(1 - alpha/2, df = n - 1)
 margin <- t_crit * (pois_sds / sqrt(n))
@@ -468,17 +444,259 @@ Method 2 (Solving the quadratic) is mathematically elegant and valid. It account
 
 Method 3 is the easiest to apply and works well for large $n$, but technically assumes normality of the data more strongly.
 
-
-
 Part II: Unbiasedness of Estimators
 
-Problem 3
+## **Problem 3**
+
+In this task, you need to analyze the estimators of sample variance and their properties: we’ll prove the unbiasedness of variance estimator theoretically and check it on practice!
+
+Example 2. Here is code to create a dataset (with known population variance; for simplicity we simulate the normal distribution)
 
 ```{r}
+set.seed(42)
+n <- 100
+mu <- 10
+sigma_squared <- 4
+sigma <- sqrt(sigma_squared)
+dataset <- rnorm(n, mean = mu, sd = sigma)
+head(dataset)
+## [1] 12.741917 8.870604 10.726257 11.265725 10.808537 9.787751
+cat("Population Mean (mu):", mu, "\n")
+## Population Mean (mu): 10
+cat("Population Variance (sigma_squared):", sigma_squared, "\n")
+## Population Variance (sigma_squared): 4
+sample_mean <- mean(dataset)
+sample_variance <- var(dataset)
+cat("Sample Mean:", sample_mean, "\n")
+## Sample Mean: 10.06503
+cat("Sample Variance:", sample_variance, "\n")
+## Sample Variance: 4.337697
 
 ```
 
+There are two common estimators of sample variance:
 
+$$
+\sigma_n^2 = \frac{1}{n}\sum_{i=1}^{n}(X_i - \bar{X})^2
+$$
 
+$$
+\sigma_{n-1}^2 = \frac{1}{n-1}\sum_{i=1}^{n}(X_i - \bar{X})^2
+$$
 
-Conclusion (if we will have one)
+Task:
+
+(a) **write the code to find the variance for the dataset;**
+
+    ```{r}
+    sigma_n_squared <- sum((dataset - mean(dataset))^2) / n
+
+    sigma_n_minus_1_squared <- sum((dataset - mean(dataset))^2) / (n - 1)
+
+    cat("σ²ₙ (biased):", sigma_n_squared, "\n")
+    cat("σ²ₙ₋₁ (unbiased):", sigma_n_minus_1_squared, "\n")
+    ```
+
+<!-- -->
+
+(b) **find** $σ^2_n$ **and** $σ_{n-1}^2$ **for n = 10, n = 50, n = 100, n = 1000;**
+
+    ```{r}
+    n_values <- c(10, 50, 100, 1000)
+    results <- data.frame(
+      n = n_values,
+      sigma_n_squared = NA,
+      sigma_n_minus_1_squared = NA
+    )
+
+    for (i in 1:length(n_values)) {
+      n <- n_values[i]
+      
+      dataset <- rnorm(n, mean = mu, sd = sigma)
+      
+      results$sigma_n_squared[i] <- sum((dataset - mean(dataset))^2) / n
+      
+      results$sigma_n_minus_1_squared[i] <- sum((dataset - mean(dataset))^2) / (n - 1)
+    }
+
+    print(results)
+    ```
+
+<!-- -->
+
+(c) **find the biases** $Bias(σ_{n}^2)$ **=** $E(σ_{n}^2)−σ^2$ **and** $Bias(σ_{n−1}^2) = E(σ_{n−1}^2)−σ^2$**;**
+
+    ```{r}
+    n_simulations <- 10000
+
+    estimate_bias <- function(n, n_sims, mu, sigma) {
+      sigma_n_vec <- numeric(n_sims)
+      sigma_n_minus_1_vec <- numeric(n_sims)
+      
+      for (i in 1:n_sims) {
+        data <- rnorm(n, mean = mu, sd = sigma)
+        mean_data <- mean(data)
+        
+        sigma_n_vec[i] <- sum((data - mean_data)^2) / n
+        sigma_n_minus_1_vec[i] <- sum((data - mean_data)^2) / (n - 1)
+      }
+      
+
+      
+      #expected values
+      E_sigma_n <- mean(sigma_n_vec)
+      E_sigma_n_minus_1 <- mean(sigma_n_minus_1_vec)
+      
+      #biases
+      bias_n <- E_sigma_n - sigma_squared
+      bias_n_minus_1 <- E_sigma_n_minus_1 - sigma_squared
+      
+      return(c(E_sigma_n, E_sigma_n_minus_1, bias_n, bias_n_minus_1))
+    }
+
+    #all sample sizes
+    results <- t(sapply(n_values, estimate_bias, 
+                        n_sims = n_simulations, mu = mu, sigma = sigma))
+
+    bias_table <- data.frame(
+      n = n_values,
+      E_sigma_n = results[, 1],
+      E_sigma_n_minus_1 = results[, 2],
+      Bias_sigma_n = results[, 3],
+      Bias_sigma_n_minus_1 = results[, 4]
+    )
+
+    print(bias_table)
+
+    ```
+
+<!-- -->
+
+(d) **comment on the results for the different values of n;**
+
+σ²ₙ is biased and underestimates the true variance, especially for small samples. σ²ₙ₋₁ is unbiased and accurate for all sample sizes(always is around 0). As n gets larger, both estimators give similar results.
+
+(e) **derive analytically the expected value of each estimator E(σ2n) and E(σ2n−1);**
+
+By definition, which is given above, we have: $$
+\sigma_n^2 = \frac{1}{n}\sum_{i=1}^{n}(X_i - \bar{X})^2
+$$
+
+Now we should plug it in under the expectation brackets and use linearity of expectation: $$
+E(\sigma_n^2) = E\left(\frac{1}{n}\sum_{i=1}^{n}(X_i - \bar{X})^2\right) = \frac{1}{n}E\left(\sum_{i=1}^{n}(X_i - \bar{X})^2\right)
+$$
+
+Sum of squared deviations could be rewritten like this: $$
+\sum_{i=1}^{n}(X_i - \bar{X})^2 = \sum_{i=1}^{n}(X_i - \mu + \mu - \bar{X})^2
+$$
+
+$$
+= \sum_{i=1}^{n}[(X_i - \mu) - (\bar{X} - \mu)]^2
+$$
+
+$$
+= \sum_{i=1}^{n}(X_i - \mu)^2 - 2(\bar{X} - \mu)\sum_{i=1}^{n}(X_i - \mu) + n(\bar{X} - \mu)^2
+$$
+
+Since $\sum_{i=1}^{n}(X_i - \mu) = n(\bar{X} - \mu)$: $$
+= \sum_{i=1}^{n}(X_i - \mu)^2 - 2n(\bar{X} - \mu)^2 + n(\bar{X} - \mu)^2
+$$
+
+$$
+= \sum_{i=1}^{n}(X_i - \mu)^2 - n(\bar{X} - \mu)^2
+$$
+
+Taking expectations: $$
+E\left(\sum_{i=1}^{n}(X_i - \bar{X})^2\right) = E\left(\sum_{i=1}^{n}(X_i - \mu)^2\right) - nE((\bar{X} - \mu)^2)
+$$
+
+Since $E[(X_i - \mu)^2] = \sigma^2$ and $E[(\bar{X} - \mu)^2] = \text{Var}(\bar{X}) = \frac{\sigma^2}{n}$: $$
+= n\sigma^2 - n \cdot \frac{\sigma^2}{n} = n\sigma^2 - \sigma^2 = (n-1)\sigma^2
+$$ $$
+E(\sigma_n^2) = \frac{1}{n}(n-1)\sigma^2 = \frac{n-1}{n}\sigma^2
+$$Then: $$
+\sigma_{n-1}^2 = \frac{1}{n-1}\sum_{i=1}^{n}(X_i - \bar{X})^2
+$$
+
+Taking the expected value: $$
+E(\sigma_{n-1}^2) = \frac{1}{n-1}E\left(\sum_{i=1}^{n}(X_i - \bar{X})^2\right)
+$$
+
+Using the result from above: $$
+E(\sigma_{n-1}^2) = \frac{1}{n-1}(n-1)\sigma^2 = \sigma^2
+$$
+
+Results:
+
+$$
+E(\sigma_n^2) = \frac{n-1}{n}\sigma^2 \quad \text{;} \quad E(\sigma_{n-1}^2) = \sigma^2
+$$
+
+(f) **using the expected values found above, show mathematically what of the above two estimators are**
+
+unbiased;
+
+An estimator is unbiased if its expected value equals the true parameter.
+
+From part (e), we derived: $$E(\sigma_n^2) = \frac{n-1}{n}\sigma^2 \quad \text{and} \quad E(\sigma_{n-1}^2) = \sigma^2$$
+
+We need to check if $E(\sigma_n^2) = \sigma^2$: $$E(\sigma_n^2) = \frac{n-1}{n}\sigma^2 \neq \sigma^2$$
+
+Since $\frac{n-1}{n} < 1$ for all $n > 1$, we have: $$E(\sigma_n^2) < \sigma^2$$
+
+Hence, $\sigma_n^2$ is biased (it underestimates the true variance).
+
+Now we need to check if $E(\sigma_{n-1}^2) = \sigma^2$: $$E(\sigma_{n-1}^2) = \sigma^2$$
+
+This equality holds exactly!
+
+Therefore, $\sigma_{n-1}^2$ is unbiased
+
+Conclusion\
+$$\sigma_{n-1}^2 = \frac{1}{n-1}\sum_{i=1}^{n}(X_i - \bar{X})^2 \text{ is the unbiased estimator}$$
+
+(g) **comment on the results behind theoretical and practical tasks.**
+
+The theoretical derivations in parts (e) and (f) are fully confirmed by the simulation results in part (c):
+
+**Theoretical predictions:** - E(σ²ₙ) = [(n-1)/n]σ² shows σ²ₙ is biased (take a look at the factor (n-1)/n)) - E(σ²ₙ₋₁) = σ² shows σ²ₙ₋₁ is unbiased
+
+**Practical confirmation:** -
+
+Comparing theoretical **vs** observed biases from the table FOR SIGMA_N:
+
+n=10: theoretical = -0.4, observed = -0.372853482
+
+n=50: theoretical = -0.08, observed = -0.084381877
+
+n=100: theoretical = -0.04, observed = -0.031401389
+
+n=1000: theoretical = -0.004, observed = -0.002798725
+
+It is noticable that as n enlarges, the bias converges to 0, which shows that it might be not a good source of estimation for small sample sizes.
+
+However, comparing theoretical **vs** observed biases from the table FOR SIGMA_N_MINUS_1:
+
+n=10: theoretical = 0, observed = 0.030162798
+
+n=50: theoretical = 0, observed = -0.004471303
+
+n=100: theoretical =0, observed = 0.008685465
+
+n=1000: theoretical =0, observed = 0.001202478
+
+The simulation biases for σ²ₙ₋₁ are all very close to 0 across all sample sizes (on averege \< 0.01), confirming unbiasedness.
+
+**SO** as n increases, the bias of σ²ₙ approaches 0, making both estimators practically equivalent for large samples.
+
+**Key insight:** The (n-1) denominator in σ²ₙ₋₁ corrects for the fact that we're using the sample mean instead of the true population mean, which reduces the degrees of freedom by 1. This correction is essential for small samples but becomes negligible as n → ∞.
+
+# **CONCLUSION**
+
+In ***Problem 1***, we verified that Method 1 (Exact Chi-Squared) provides the most accurate confidence intervals for the exponential distribution parameter, achieving coverage probabilities closest to the theoretical confidence level, while other methods based on the Central Limit Theorem work well for large sample sizes but may underperform with smaller samples.
+
+***Problem 2*** demonstrated that for Poisson distributions, all three approximation methods (Normal with known variance, solved quadratic inequality, and Student's t) produce valid confidence intervals with good coverage, though the quadratic solution method is most practical as it doesn't require knowing the true parameter.
+
+In ***Problem 3***, we proved both theoretically and empirically that the sample variance estimator with (n-1) denominator is unbiased, while the estimator with n denominator systematically underestimates the true variance by a factor of -σ²/n, with this bias becoming negligible only for very large samples.
+
+Overall, this lab successfully illustrated the fundamental principles of statistical estimation, demonstrating how theoretical derivations align with empirical simulations and highlighting the importance of choosing appropriate estimation methods based on the underlying distribution and sample size.
